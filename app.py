@@ -1,7 +1,8 @@
 from flask import Flask, request, jsonify
 from base64 import b64decode
 from os.path import basename
-from neural_style import style_transfer_main
+from neural_style import neuralstyle
+import urllib
 
 app = Flask(__name__) 
 
@@ -18,10 +19,27 @@ def style_transfer():
     contentPath = contentPath.decode('utf-8')
     stylePath = stylePath.decode('utf-8')
 
+    # Download the style to local machine
+    styleFileName = 'data/style/' + basename(stylePath)
+    urllib.request.urlretrieve(stylePath, filename=styleFileName)
+
+    # Download the content file to local machine
+    contentFileName = 'data/content/' + basename(contentPath)
+    urllib.request.urlretrieve(contentPath, filename=contentFileName)
+
     outputname = basename(contentPath) + '_' + basename(stylePath) + '.png'
     outputPath = 'data/outputs/' + outputname
 
-    style_transfer_main(contentPath, stylePath, outputPath, iterations)
+    args = {"content": contentFileName, "styles": styleFileName, "output": outputPath, "iterations": iterations}
+    styleOp = neuralstyle(args)
+    _, error = styleOp.train()
+
+    # Todo: How to add the custom error information to the response
+    if error is not None:
+        return error
+
+    # Todo: Clear the temporary style and content files
+
     return jsonify({'output': 'http://localhost:9090/' + outputPath}) 
 
 @app.after_request
