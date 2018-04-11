@@ -165,5 +165,8 @@ class neuralstyle(object):
                 output_file = self.output
             if output_file:
                 imsave(output_file, combined_rgb)
-        
+                return output_file, None
+            else:
+                return np.clip(combined_rgb, 0, 255).astype(np.uint8), None
+
         return None, None

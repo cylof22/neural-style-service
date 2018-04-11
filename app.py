@@ -20,25 +20,26 @@ def style_transfer():
     stylePath = stylePath.decode('utf-8')
 
     # Download the style to local machine
-    styleFileName = 'data/style/' + basename(stylePath)
-    urllib.request.urlretrieve(stylePath, filename=styleFileName)
+    styleFileName = urllib.request.urlretrieve(stylePath)[0]
 
     # Download the content file to local machine
-    contentFileName = 'data/content/' + basename(contentPath)
-    urllib.request.urlretrieve(contentPath, filename=contentFileName)
+    contentFileName = urllib.request.urlretrieve(contentPath)[0]
 
+    # Construct the output file name
     outputname = basename(contentPath) + '_' + basename(stylePath) + '.png'
     outputPath = 'data/outputs/' + outputname
 
-    args = {"content": contentFileName, "styles": styleFileName, "output": outputPath, "iterations": iterations}
+    args = {"content": contentFileName, "styles": {styleFileName}, "output": outputPath, "iterations": iterations}
     styleOp = neuralstyle(args)
     _, error = styleOp.train()
 
     # Todo: How to add the custom error information to the response
     if error is not None:
+        urllib.request.urlcleanup()
         return error
 
     # Todo: Clear the temporary style and content files
+    urllib.request.urlcleanup()
 
     return jsonify({'output': 'http://localhost:9090/' + outputPath}) 
 
@@ -48,4 +49,4 @@ def after_request(response):
     return response
 
 if __name__ == '__main__': 
-    app.run()
+    app.run(port=9090)
