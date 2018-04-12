@@ -1,8 +1,13 @@
 from flask import Flask, request, jsonify
 from base64 import b64decode
 from os.path import basename
-from neural_style import neuralstyle
 import urllib
+from collections import namedtuple
+import tensorflow as tf
+tf.set_random_seed(19)
+
+from neural_style import neuralstyle
+from model import cyclegan
 
 app = Flask(__name__) 
 
@@ -42,6 +47,30 @@ def style_transfer():
     urllib.request.urlcleanup()
 
     return jsonify({'output': 'http://localhost:9090/' + outputPath}) 
+
+@app.route('artistStyle', methods=['GET'])
+def art_style():
+    # Get the artist name
+    model_dir = None
+    style = request.args.get('artist')
+    model_dir = './checkpoint/' + style
+    
+    OPTIONS = namedtuple('OPTIONS', 'fine_width fine_height input_nc output_nc\
+                              L1_lambda lr dataset_dir sample_dir checkpoint_dir\
+                              ngf ndf max_size phase direction \
+                              beta1 epoch epoch_step batch_size train_size')
+    
+    args = OPTIONS._make((256, 256, 3, 3, 10.0, 0.0002, '', '', model_dir, 64, 64, 50, 'test', 'BtoA',
+                         0.5, 200, 100, 1, 1e8))
+
+    tfconfig = tf.ConfigProto(allow_soft_placement=True)
+    tfconfig.gpu_options.allow_growth = True
+    with tf.Session(config=tfconfig) as sess:
+        model = cyclegan(sess, args)
+        model.train(args) if args.phase == 'train' \
+            else model.test(args)
+    
+    return jsonify({'output': 'http://localhost:9090/'})
 
 @app.after_request
 def after_request(response):
