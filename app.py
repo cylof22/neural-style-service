@@ -56,21 +56,25 @@ def art_style():
     model_dir = './checkpoint/' + style
     
     OPTIONS = namedtuple('OPTIONS', 'fine_width fine_height input_nc output_nc\
-                              L1_lambda lr dataset_dir sample_dir checkpoint_dir\
+                              L1_lambda lr dataset_dir sample_dir checkpoint_dir output_dir \
                               ngf ndf max_size phase direction \
                               beta1 epoch epoch_step batch_size train_size')
     
-    args = OPTIONS._make((256, 256, 3, 3, 10.0, 0.0002, '', '', model_dir, 64, 64, 50, 'test', 'BtoA',
+    args = OPTIONS._make((256, 256, 3, 3, 10.0, 0.0002, '', '', model_dir, './data/outputs/',64, 64, 50, 'test', 'BtoA',
                          0.5, 200, 100, 1, 1e8))
 
     tfconfig = tf.ConfigProto(allow_soft_placement=True)
     tfconfig.gpu_options.allow_growth = True
+
+    outputPath = None
     with tf.Session(config=tfconfig) as sess:
         model = cyclegan(sess, args)
-        model.train(args) if args.phase == 'train' \
-            else model.test(args)
+        if args.phase == 'train':
+            model.train(args)
+        elif:
+            outputPath = model.test(args)
     
-    return jsonify({'output': 'http://localhost:9090/'})
+    return jsonify({'output': 'http://localhost:9090/' + outputPath})
 
 @app.after_request
 def after_request(response):

@@ -273,11 +273,11 @@ class cyclegan(object):
         sample_image = [load_test_data(args.sample_file, args.image_width, args.image_height)]
         sample_image = np.array(sample_image).astype(np.float32)
 
-        test_dir = args.get("test_dir")
-        if test_dir is None:
-            test_dir = './'
+        output_dir = args.output_dir
+        if output_dir is None:
+            output_dir = './'
 
-        image_path = os.path.join(test_dir,
+        image_path = os.path.join(output_dir,
             '{0}_{1}'.format(which_direction, os.path.basename(args.sample_file)))
         fake_img = self.sess.run(out_var, feed_dict={in_var: sample_image})
         save_images(fake_img, [1, 1], image_path)
