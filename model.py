@@ -33,7 +33,7 @@ class cyclegan(object):
 
         OPTIONS = namedtuple('OPTIONS', 'batch_size image_width image_height \
                               gf_dim df_dim output_c_dim is_training')
-        self.options = OPTIONS._make((args.batch_size, args.fine_size,
+        self.options = OPTIONS._make((args.batch_size, args.fine_width, args.fine_height,
                                       args.ngf, args.ndf, args.output_nc,
                                       args.phase == 'train'))
 
@@ -205,10 +205,7 @@ class cyclegan(object):
 
     def load(self, checkpoint_dir):
         print(" [*] Reading checkpoint...")
-
-        model_dir = "%s_%s_%s" % (self.dataset_dir, self.image_width, self.image_height)
-        checkpoint_dir = os.path.join(checkpoint_dir, model_dir)
-
+        
         ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
         if ckpt and ckpt.model_checkpoint_path:
             ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
@@ -270,7 +267,7 @@ class cyclegan(object):
             print("Please set the output image height size")
             return None
         
-        sample_image = [load_test_data(args.sample_file, args.image_width, args.image_height)]
+        sample_image = [load_test_data(args.sample_file, args.fine_width, args.fine_height)]
         sample_image = np.array(sample_image).astype(np.float32)
 
         output_dir = args.output_dir

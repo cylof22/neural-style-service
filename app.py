@@ -55,12 +55,17 @@ def art_style():
     style = request.args.get('artist')
     model_dir = './checkpoint/' + style
     
+    contentArg = request.args.get('content')
+    contentPath = b64decode(contentArg)
+    contentPath = contentPath.decode('utf-8')
+    contentFileName = urllib.request.urlretrieve(contentPath)[0]
+
     OPTIONS = namedtuple('OPTIONS', 'fine_width fine_height input_nc output_nc\
-                              L1_lambda lr dataset_dir sample_dir checkpoint_dir output_dir \
+                              L1_lambda lr use_resnet use_lsgan dataset_dir sample_dir checkpoint_dir output_dir \
                               ngf ndf max_size phase direction \
                               beta1 epoch epoch_step batch_size train_size')
     
-    args = OPTIONS._make((256, 256, 3, 3, 10.0, 0.0002, '', '', model_dir, './data/outputs/',64, 64, 50, 'test', 'BtoA',
+    args = OPTIONS._make((256, 256, 3, 3, 10.0, 0.0002, False, False, '', contentFileName, model_dir, './data/outputs/',64, 64, 50, 'test', 'BtoA',
                          0.5, 200, 100, 1, 1e8))
 
     tfconfig = tf.ConfigProto(allow_soft_placement=True)
@@ -71,7 +76,7 @@ def art_style():
         model = cyclegan(sess, args)
         if args.phase == 'train':
             model.train(args)
-        elif:
+        else: 
             outputPath = model.test(args)
     
     return jsonify({'output': 'http://localhost:9090/' + outputPath})
@@ -81,5 +86,5 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
-if __name__ == '__main__': 
+if __name__ == '__main__':
     app.run(port=9090)
