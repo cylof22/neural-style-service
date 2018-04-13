@@ -65,14 +65,20 @@ def art_style():
     im = Image.open(content_file)
     width, height = im.size
 
-    fine_size = width if width > height else height
+    fine_width = width
+    if (width % 4) != 0:
+        fine_width = width - height % 4
+
+    fine_height = height
+    if (height % 4) != 0:
+        fine_height = height - height % 4
 
     OPTIONS = namedtuple('OPTIONS', 'fine_width fine_height input_nc output_nc\
                               L1_lambda lr use_resnet use_lsgan dataset_dir sample_file checkpoint_dir output_dir \
                               ngf ndf max_size phase direction \
                               beta1 epoch epoch_step batch_size train_size')
     
-    args = OPTIONS._make((fine_size + 3, fine_size + 3, 3, 3, 10.0, 0.0002, True, True, '', content_file, model_dir, './data/outputs/',64, 64, 50, 'test', 'BtoA',
+    args = OPTIONS._make((fine_width, fine_height, 3, 3, 10.0, 0.0002, True, True, '', content_file, model_dir, './data/outputs/',64, 64, 50, 'test', 'BtoA',
                          0.5, 200, 100, 1, 1e8))
 
     tfconfig = tf.ConfigProto(allow_soft_placement=True)
@@ -87,6 +93,9 @@ def art_style():
     img = Image.open(outputPath)
     rsImg = img.resize((width,height), Image.ANTIALIAS)
     rsImg.save(outputPath)
+
+     # Clear the temporary content file
+    urllib.request.urlcleanup()
 
     return jsonify({'output': 'http://localhost:9090/' + outputPath})
 
