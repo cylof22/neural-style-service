@@ -3,6 +3,8 @@ from base64 import b64decode
 from os.path import basename
 import urllib
 from collections import namedtuple
+from PIL import Image
+
 import tensorflow as tf
 tf.set_random_seed(19)
 
@@ -58,14 +60,19 @@ def art_style():
     contentArg = request.args.get('content')
     contentPath = b64decode(contentArg)
     contentPath = contentPath.decode('utf-8')
-    contentFileName = urllib.request.urlretrieve(contentPath)[0]
+    content_file = urllib.request.urlretrieve(contentPath)[0]
+
+    im = Image.open(content_file)
+    width, height = im.size
+
+    fine_size = width if width > height else height
 
     OPTIONS = namedtuple('OPTIONS', 'fine_width fine_height input_nc output_nc\
                               L1_lambda lr use_resnet use_lsgan dataset_dir sample_file checkpoint_dir output_dir \
                               ngf ndf max_size phase direction \
                               beta1 epoch epoch_step batch_size train_size')
     
-    args = OPTIONS._make((256, 256, 3, 3, 10.0, 0.0002, True, True, '', contentFileName, model_dir, './data/outputs/',64, 64, 50, 'test', 'BtoA',
+    args = OPTIONS._make((fine_size + 3, fine_size + 3, 3, 3, 10.0, 0.0002, True, True, '', content_file, model_dir, './data/outputs/',64, 64, 50, 'test', 'BtoA',
                          0.5, 200, 100, 1, 1e8))
 
     tfconfig = tf.ConfigProto(allow_soft_placement=True)
@@ -76,6 +83,11 @@ def art_style():
         model = cyclegan(sess, args)
         outputPath = model.test(args)
     
+    # resize the file to the original image size
+    img = Image.open(outputPath)
+    rsImg = img.resize((width,height), Image.ANTIALIAS)
+    rsImg.save(outputPath)
+
     return jsonify({'output': 'http://localhost:9090/' + outputPath})
 
 @app.after_request
