@@ -9,7 +9,7 @@ tf.set_random_seed(19)
 from neural_style import neuralstyle
 from model import cyclegan
 
-app = Flask(__name__) 
+app = Flask(__name__)
 
 @app.route('/styleTransfer', methods=['GET']) 
 def style_transfer(): 
@@ -48,7 +48,7 @@ def style_transfer():
 
     return jsonify({'output': 'http://localhost:9090/' + outputPath}) 
 
-@app.route('artistStyle', methods=['GET'])
+@app.route('/artistStyle', methods=['GET'])
 def art_style():
     # Get the artist name
     model_dir = None
@@ -61,11 +61,11 @@ def art_style():
     contentFileName = urllib.request.urlretrieve(contentPath)[0]
 
     OPTIONS = namedtuple('OPTIONS', 'fine_width fine_height input_nc output_nc\
-                              L1_lambda lr use_resnet use_lsgan dataset_dir sample_dir checkpoint_dir output_dir \
+                              L1_lambda lr use_resnet use_lsgan dataset_dir sample_file checkpoint_dir output_dir \
                               ngf ndf max_size phase direction \
                               beta1 epoch epoch_step batch_size train_size')
     
-    args = OPTIONS._make((256, 256, 3, 3, 10.0, 0.0002, False, False, '', contentFileName, model_dir, './data/outputs/',64, 64, 50, 'test', 'BtoA',
+    args = OPTIONS._make((256, 256, 3, 3, 10.0, 0.0002, True, True, '', contentFileName, model_dir, './data/outputs/',64, 64, 50, 'test', 'BtoA',
                          0.5, 200, 100, 1, 1e8))
 
     tfconfig = tf.ConfigProto(allow_soft_placement=True)
@@ -74,10 +74,7 @@ def art_style():
     outputPath = None
     with tf.Session(config=tfconfig) as sess:
         model = cyclegan(sess, args)
-        if args.phase == 'train':
-            model.train(args)
-        else: 
-            outputPath = model.test(args)
+        outputPath = model.test(args)
     
     return jsonify({'output': 'http://localhost:9090/' + outputPath})
 
