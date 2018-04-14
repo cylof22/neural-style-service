@@ -48,7 +48,7 @@ def style_transfer():
     # Todo: Clear the temporary style and content files
     urllib.request.urlcleanup()
 
-    return jsonify({'output': 'http://localhost:9090/' + outputPath}) 
+    return jsonify({'output': 'http://localhost:8000/outputs/' + outputname}) 
 
 @app.route('/artistStyle', methods=['GET'])
 def art_style():
@@ -97,7 +97,7 @@ def art_style():
      # Clear the temporary content file
     urllib.request.urlcleanup()
 
-    return jsonify({'output': 'http://localhost:9090/' + outputPath})
+    return jsonify({'output': 'http://localhost:8000/outputs/' + basename(outputPath)})
 
 @app.after_request
 def after_request(response):
