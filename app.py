@@ -73,13 +73,14 @@ def art_style():
     if (height % 4) != 0:
         fine_height = height - height % 4
 
+    output_file = style + basename(contentPath)
     OPTIONS = namedtuple('OPTIONS', 'fine_width fine_height input_nc output_nc\
                               L1_lambda lr use_resnet use_lsgan dataset_dir sample_file checkpoint_dir output_dir \
                               ngf ndf max_size phase direction \
-                              beta1 epoch epoch_step batch_size train_size')
+                              beta1 epoch epoch_step batch_size train_size output_file')
     
     args = OPTIONS._make((fine_width, fine_height, 3, 3, 10.0, 0.0002, True, True, '', content_file, model_dir, './data/outputs/',64, 64, 50, 'test', 'BtoA',
-                         0.5, 200, 100, 1, 1e8))
+                         0.5, 200, 100, 1, 1e8, output_file))
 
     tfconfig = tf.ConfigProto(allow_soft_placement=True)
     tfconfig.gpu_options.allow_growth = True
@@ -102,6 +103,7 @@ def art_style():
 @app.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', '*')
     return response
 
 if __name__ == '__main__':

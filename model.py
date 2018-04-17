@@ -275,7 +275,7 @@ class cyclegan(object):
             output_dir = './'
 
         image_path = os.path.join(output_dir,
-            '{0}_{1}'.format(which_direction, os.path.basename(args.sample_file)))
+            '{0}_{1}'.format(which_direction, args.output_file))
         fake_img = self.sess.run(out_var, feed_dict={in_var: sample_image})
         save_images(fake_img, [1, 1], image_path)
 
