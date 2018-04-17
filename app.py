@@ -86,6 +86,7 @@ def art_style():
     tfconfig.gpu_options.allow_growth = True
 
     outputPath = None
+    tf.reset_default_graph()
     with tf.Session(config=tfconfig) as sess:
         model = cyclegan(sess, args)
         outputPath = model.test(args)
