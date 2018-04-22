@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from base64 import b64decode
 from os.path import basename
 import urllib
@@ -48,7 +48,7 @@ def style_transfer():
     # Todo: Clear the temporary style and content files
     urllib.request.urlcleanup()
 
-    return jsonify({'output': 'http://localhost:8000/outputs/' + outputname}) 
+    return send_file(outputPath, mimetype='image/png')
 
 @app.route('/artistStyle', methods=['GET'])
 def art_style():
@@ -99,7 +99,9 @@ def art_style():
      # Clear the temporary content file
     urllib.request.urlcleanup()
 
-    return jsonify({'output': 'http://localhost:8000/outputs/' + basename(outputPath)})
+    imgMIME = 'image/' + basename(outputPath).split('.')[1:]
+
+    return send_file(outputPath,  mimetype=imgMIME)
 
 @app.after_request
 def after_request(response):
