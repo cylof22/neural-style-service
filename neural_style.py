@@ -66,6 +66,8 @@ class neuralstyle(object):
         
         if self.network is None:
             self.network = 'imagenet-vgg-verydeep-19.mat'
+        else:
+            self.network = self.network + 'imagenet-vgg-verydeep-19.mat'
 
         if self.content_weight is None:
             self.content_weight = 5e0

@@ -10,8 +10,12 @@ tf.set_random_seed(19)
 
 from neural_style import neuralstyle
 from model import cyclegan
+from argparse import ArgumentParser
 
 app = Flask(__name__)
+
+MODEL_DIR = ''
+CHECKPOINT_DIR = ''
 
 @app.route('/styleTransfer', methods=['GET']) 
 def style_transfer(): 
@@ -36,7 +40,9 @@ def style_transfer():
     outputname = basename(contentPath) + '_' + basename(stylePath) + '.png'
     outputPath = 'data/outputs/' + outputname
 
-    args = {"content": contentFileName, "styles": {styleFileName}, "output": outputPath, "iterations": iterations}
+    args = {"content": contentFileName, "styles": {styleFileName}, "output": outputPath, "iterations": iterations,
+        'network': MODEL_DIR}
+    
     styleOp = neuralstyle(args)
     _, error = styleOp.train()
 
@@ -55,7 +61,7 @@ def art_style():
     # Get the artist name
     model_dir = None
     style = request.args.get('artist')
-    model_dir = './checkpoint/' + style
+    model_dir = CHECKPOINT_DIR + style
     
     contentArg = request.args.get('content')
     contentPath = b64decode(contentArg)
@@ -109,5 +115,27 @@ def after_request(response):
     response.headers.add('Access-Control-Allow-Headers', '*')
     return response
 
+def build_parser():
+    parser = ArgumentParser()
+    parser.add_argument('--host',
+            dest='host', help='style server host',
+            metavar='HOST', default='localhost', required=False)
+    parser.add_argument('--port',
+            dest='port', help='style server port',
+            metavar='PORT', default='9090', required=False)
+    parser.add_argument('--modeldir', 
+            dest='modeldir', help='style transfer directory',
+            metvar='MODEL', default='./', required=False)
+    parser.add_argument('--checkpointdir',
+            dest='checkpointdir', help='artist transfer checkpoint director', 
+            metavar='CHECKPOINTDIR', default='./checkpoint/',required=False)
+    return parser
+    
 if __name__ == '__main__':
-    app.run(port=9090)
+    parser = build_parser()
+    options = parser.parse_args()
+
+    MODEL_DIR = options.modeldir
+    CHECKPOINT_DIR = options.checkpointdir
+
+    app.run(host=options.host,port=options.port)
