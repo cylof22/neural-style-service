@@ -73,7 +73,7 @@ def art_style():
 
     fine_width = width
     if (width % 4) != 0:
-        fine_width = width - height % 4
+        fine_width = width - width % 4
 
     fine_height = height
     if (height % 4) != 0:
@@ -105,7 +105,9 @@ def art_style():
      # Clear the temporary content file
     urllib.request.urlcleanup()
 
-    imgMIME = 'image/' + basename(outputPath).split('.')[1:]
+    imgMIME = 'image/' + '-'.join(basename(outputPath).split('.')[1:])
+
+    print(imgMIME)
 
     return send_file(outputPath,  mimetype=imgMIME)
 
@@ -125,7 +127,7 @@ def build_parser():
             metavar='PORT', default='9090', required=False)
     parser.add_argument('--modeldir', 
             dest='modeldir', help='style transfer directory',
-            metvar='MODEL', default='./', required=False)
+            metavar='MODEL', default='./', required=False)
     parser.add_argument('--checkpointdir',
             dest='checkpointdir', help='artist transfer checkpoint director', 
             metavar='CHECKPOINTDIR', default='./checkpoint/',required=False)
@@ -138,4 +140,4 @@ if __name__ == '__main__':
     MODEL_DIR = options.modeldir
     CHECKPOINT_DIR = options.checkpointdir
 
-    app.run(host=options.host,port=options.port)
+    app.run(host=options.host,port=int(options.port))
