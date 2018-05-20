@@ -7,10 +7,9 @@ import pprint
 import scipy.misc
 import numpy as np
 import copy
-try:
-    _imread = scipy.misc.imread
-except AttributeError:
-    from imageio import imread as _imread
+
+from imageio import imread as _imread
+from imageio import imwrite
 
 pp = pprint.PrettyPrinter()
 
@@ -101,7 +100,9 @@ def merge(images, size):
     return img
 
 def imsave(images, size, path):
-    return scipy.misc.imsave(path, merge(images, size))
+    #Todo: restore the quality to 100% for jpeg
+    kwargs_write = {'quality':100}
+    imwrite(path, merge(images, size), kwargs_write)
 
 def center_crop(x, crop_h, crop_w,
                 resize_h=64, resize_w=64):
