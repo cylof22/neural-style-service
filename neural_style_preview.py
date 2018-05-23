@@ -2,6 +2,7 @@ import os
 from argparse import ArgumentParser
 from keras import backend as K
 import numpy as np
+from vgg19model import VGG19Model
 from keras.applications import vgg19
 from keras.preprocessing.image import load_img, img_to_array
 
@@ -123,14 +124,11 @@ def style_preview(content, style, output):
     input_tensor = K.concatenate([target_image,
         style_image,generated_image], axis=0)
 
-    stderr.write('Start download the model')
     # The preview network needs to download to the suitable location
-    model = vgg19.VGG19(input_tensor=input_tensor,
+    model = VGG19Model(input_tensor=input_tensor,
                     weights='imagenet',
                     include_top=False,
                     cache_dir=".")
-    
-    stderr.write('Model downloading ending')
 
     layers = dict([(layer.name, layer.output) for layer in model.layers])
 
