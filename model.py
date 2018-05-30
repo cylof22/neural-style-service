@@ -79,31 +79,6 @@ class cyclegan(object):
         self.DB_fake_sample = self.discriminator(self.fake_B_sample, self.options, reuse=True, name="discriminatorB")
         self.DA_fake_sample = self.discriminator(self.fake_A_sample, self.options, reuse=True, name="discriminatorA")
 
-        self.db_loss_real = self.criterionGAN(self.DB_real, tf.ones_like(self.DB_real))
-        self.db_loss_fake = self.criterionGAN(self.DB_fake_sample, tf.zeros_like(self.DB_fake_sample))
-        self.db_loss = (self.db_loss_real + self.db_loss_fake) / 2
-        self.da_loss_real = self.criterionGAN(self.DA_real, tf.ones_like(self.DA_real))
-        self.da_loss_fake = self.criterionGAN(self.DA_fake_sample, tf.zeros_like(self.DA_fake_sample))
-        self.da_loss = (self.da_loss_real + self.da_loss_fake) / 2
-        self.d_loss = self.da_loss + self.db_loss
-
-        self.g_loss_a2b_sum = tf.summary.scalar("g_loss_a2b", self.g_loss_a2b)
-        self.g_loss_b2a_sum = tf.summary.scalar("g_loss_b2a", self.g_loss_b2a)
-        self.g_loss_sum = tf.summary.scalar("g_loss", self.g_loss)
-        self.g_sum = tf.summary.merge([self.g_loss_a2b_sum, self.g_loss_b2a_sum, self.g_loss_sum])
-        self.db_loss_sum = tf.summary.scalar("db_loss", self.db_loss)
-        self.da_loss_sum = tf.summary.scalar("da_loss", self.da_loss)
-        self.d_loss_sum = tf.summary.scalar("d_loss", self.d_loss)
-        self.db_loss_real_sum = tf.summary.scalar("db_loss_real", self.db_loss_real)
-        self.db_loss_fake_sum = tf.summary.scalar("db_loss_fake", self.db_loss_fake)
-        self.da_loss_real_sum = tf.summary.scalar("da_loss_real", self.da_loss_real)
-        self.da_loss_fake_sum = tf.summary.scalar("da_loss_fake", self.da_loss_fake)
-        self.d_sum = tf.summary.merge(
-            [self.da_loss_sum, self.da_loss_real_sum, self.da_loss_fake_sum,
-             self.db_loss_sum, self.db_loss_real_sum, self.db_loss_fake_sum,
-             self.d_loss_sum]
-        )
-
         self.test_A = tf.placeholder(tf.float32,
                                      [None, self.image_width, self.image_height,
                                       self.input_c_dim], name='test_A')
@@ -118,91 +93,6 @@ class cyclegan(object):
         self.g_vars = [var for var in t_vars if 'generator' in var.name]
         for var in t_vars: print(var.name)
 
-    def train(self, args):
-        print("Start Training")
-
-        """Train cyclegan"""
-        self.lr = tf.placeholder(tf.float32, None, name='learning_rate')
-        self.d_optim = tf.train.AdamOptimizer(self.lr, beta1=args.beta1) \
-            .minimize(self.d_loss, var_list=self.d_vars)
-        self.g_optim = tf.train.AdamOptimizer(self.lr, beta1=args.beta1) \
-            .minimize(self.g_loss, var_list=self.g_vars)
-
-        init_op = tf.global_variables_initializer()
-        self.sess.run(init_op)
-        self.writer = tf.summary.FileWriter("./logs", self.sess.graph)
-
-        counter = 1
-        start_time = time.time()
-
-        if args.continue_train:
-            if self.load(args.checkpoint_dir):
-                print(" [*] Load SUCCESS")
-            else:
-                print(" [!] Load failed...")
-
-        print("The epoch is " + str(args.epoch))
-
-        for epoch in range(args.epoch):
-            dataA = glob('./datasets/{}/*.*'.format(self.dataset_dir + '/trainA'))
-            dataB = glob('./datasets/{}/*.*'.format(self.dataset_dir + '/trainB'))
-            np.random.shuffle(dataA)
-            np.random.shuffle(dataB)
-
-            print("The train data size of A is " + str(len(dataA)))
-            print("The train data size of B is " + str(len(dataB)))
-            print("The train size is " + str(args.train_size))
-            
-            batch_idxs = min(min(len(dataA), len(dataB)), args.train_size) // self.batch_size
-            lr = args.lr if epoch < args.epoch_step else args.lr*(args.epoch-epoch)/(args.epoch-args.epoch_step)
-
-            print("The batch is is " + str(batch_idxs))
-            for idx in range(0, batch_idxs):
-                batch_files = list(zip(dataA[idx * self.batch_size:(idx + 1) * self.batch_size],
-                                       dataB[idx * self.batch_size:(idx + 1) * self.batch_size]))
-                batch_images = [load_train_data(batch_file, args.load_size, args.fine_size) for batch_file in batch_files]
-                batch_images = np.array(batch_images).astype(np.float32)
-                
-                print("Update G Network")
-                # Update G network and record fake outputs
-                fake_A, fake_B, _, summary_str = self.sess.run(
-                    [self.fake_A, self.fake_B, self.g_optim, self.g_sum],
-                    feed_dict={self.real_data: batch_images, self.lr: lr})
-                self.writer.add_summary(summary_str, counter)
-                [fake_A, fake_B] = self.pool([fake_A, fake_B])
-
-                print("Update D Network")
-                # Update D network
-                _, summary_str = self.sess.run(
-                    [self.d_optim, self.d_sum],
-                    feed_dict={self.real_data: batch_images,
-                               self.fake_A_sample: fake_A,
-                               self.fake_B_sample: fake_B,
-                               self.lr: lr})
-                self.writer.add_summary(summary_str, counter)
-
-                counter += 1
-                print(("Epoch: [%2d] [%4d/%4d] time: %4.4f" % (
-                    epoch, idx, batch_idxs, time.time() - start_time)))
-
-                if np.mod(counter, args.print_freq) == 1:
-                    self.sample_model(args.sample_dir, epoch, idx)
-
-                if np.mod(counter, args.save_freq) == 2:
-                    self.save(args.checkpoint_dir, counter)
-
-    def save(self, checkpoint_dir, step):
-        model_name = "cyclegan.model"
-        model_dir = "%s_%s_%s" % (self.dataset_dir, self.image_width, self.image_height)
-        checkpoint_dir = os.path.join(checkpoint_dir, model_dir)
-
-        if not os.path.exists(checkpoint_dir):
-            os.makedirs(checkpoint_dir)
-
-        self.saver.save(self.sess,
-                        os.path.join(checkpoint_dir, model_name),
-                        global_step=step)
-
     def load(self, checkpoint_dir):
         print(" [*] Reading checkpoint...")
         
@@ -213,24 +103,6 @@ class cyclegan(object):
             return True
         else:
             return False
-
-    def sample_model(self, sample_dir, epoch, idx):
-        dataA = glob('./datasets/{}/*.*'.format(self.dataset_dir + '/testA'))
-        dataB = glob('./datasets/{}/*.*'.format(self.dataset_dir + '/testB'))
-        np.random.shuffle(dataA)
-        np.random.shuffle(dataB)
-        batch_files = list(zip(dataA[:self.batch_size], dataB[:self.batch_size]))
-        sample_images = [load_train_data(batch_file, is_testing=True) for batch_file in batch_files]
-        sample_images = np.array(sample_images).astype(np.float32)
-
-        fake_A, fake_B = self.sess.run(
-            [self.fake_A, self.fake_B],
-            feed_dict={self.real_data: sample_images}
-        )
-        save_images(fake_A, [self.batch_size, 1],
-                    './{}/A_{:02d}_{:04d}.jpg'.format(sample_dir, epoch, idx))
-        save_images(fake_B, [self.batch_size, 1],
-                    './{}/B_{:02d}_{:04d}.jpg'.format(sample_dir, epoch, idx))
 
     def test(self, args):
         """Test cyclegan"""
