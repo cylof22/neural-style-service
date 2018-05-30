@@ -15,7 +15,7 @@ from argparse import ArgumentParser
 app = Flask(__name__)
 
 MODEL_DIR = ''
-CHECKPOINT_DIR = ''
+CHECKPOINT_DIR = './checkpoint/'
 
 @app.route('/styleTransfer', methods=['GET']) 
 def style_transfer(): 
@@ -61,6 +61,7 @@ def art_style():
     # Get the artist name
     model_dir = None
     style = request.args.get('artist')
+
     model_dir = CHECKPOINT_DIR + style
     
     contentArg = request.args.get('content')
@@ -121,7 +122,7 @@ def build_parser():
     parser = ArgumentParser()
     parser.add_argument('--host',
             dest='host', help='style server host',
-            metavar='HOST', default='0.0.0.0', required=False)
+            metavar='HOST', default='127.0.0.1', required=False)
     parser.add_argument('--port',
             dest='port', help='style server port',
             metavar='PORT', default='9090', required=False)
