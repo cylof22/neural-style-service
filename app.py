@@ -17,7 +17,8 @@ app = Flask(__name__)
 MODEL_DIR = ''
 CHECKPOINT_DIR = './checkpoint/'
 
-@app.route('/styleTransfer', methods=['GET']) 
+
+@app.route('/styleTransfer') 
 def style_transfer(): 
     contentArg = request.args.get('content')
     styleArg = request.args.get('style')
@@ -56,7 +57,7 @@ def style_transfer():
 
     return send_file(outputPath, mimetype='image/png')
 
-@app.route('/artistStyle', methods=['GET'])
+@app.route('/artistStyle')
 def art_style():
     # Get the artist name
     model_dir = None
@@ -115,14 +116,15 @@ def art_style():
 @app.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,OPTIONS')
     return response
 
 def build_parser():
     parser = ArgumentParser()
     parser.add_argument('--host',
             dest='host', help='style server host',
-            metavar='HOST', default='127.0.0.1', required=False)
+            metavar='HOST', default='localhost', required=False)
     parser.add_argument('--port',
             dest='port', help='style server port',
             metavar='PORT', default='9090', required=False)
