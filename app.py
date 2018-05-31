@@ -5,6 +5,8 @@ import urllib
 from collections import namedtuple
 from PIL import Image
 
+import tensorflow as tf
+
 from neural_style import neuralstyle
 from model import cyclegan
 from argparse import ArgumentParser
