@@ -13,13 +13,10 @@ from utils import *
 class cyclegan(object):
     def __init__(self, sess, args):
         self.sess = sess
-        self.batch_size = args.batch_size
         self.image_width = args.fine_width
         self.image_height = args.fine_height
         self.input_c_dim = args.input_nc
         self.output_c_dim = args.output_nc
-        self.L1_lambda = args.L1_lambda
-        self.dataset_dir = args.dataset_dir
 
         self.discriminator = discriminator
         if args.use_resnet:
@@ -31,15 +28,14 @@ class cyclegan(object):
         else:
             self.criterionGAN = sce_criterion
 
-        OPTIONS = namedtuple('OPTIONS', 'batch_size image_width image_height \
+        OPTIONS = namedtuple('OPTIONS', 'image_width image_height \
                               gf_dim df_dim output_c_dim is_training')
-        self.options = OPTIONS._make((args.batch_size, args.fine_width, args.fine_height,
+        self.options = OPTIONS._make((args.fine_width, args.fine_height,
                                       args.ngf, args.ndf, args.output_nc,
                                       args.phase == 'train'))
 
         self._build_model()
         self.saver = tf.train.Saver()
-        self.pool = ImagePool(args.max_size)
 
     def _build_model(self):
         self.real_data = tf.placeholder(tf.float32,
@@ -57,16 +53,6 @@ class cyclegan(object):
 
         self.DB_fake = self.discriminator(self.fake_B, self.options, reuse=False, name="discriminatorB")
         self.DA_fake = self.discriminator(self.fake_A, self.options, reuse=False, name="discriminatorA")
-        self.g_loss_a2b = self.criterionGAN(self.DB_fake, tf.ones_like(self.DB_fake)) \
-            + self.L1_lambda * abs_criterion(self.real_A, self.fake_A_) \
-            + self.L1_lambda * abs_criterion(self.real_B, self.fake_B_)
-        self.g_loss_b2a = self.criterionGAN(self.DA_fake, tf.ones_like(self.DA_fake)) \
-            + self.L1_lambda * abs_criterion(self.real_A, self.fake_A_) \
-            + self.L1_lambda * abs_criterion(self.real_B, self.fake_B_)
-        self.g_loss = self.criterionGAN(self.DA_fake, tf.ones_like(self.DA_fake)) \
-            + self.criterionGAN(self.DB_fake, tf.ones_like(self.DB_fake)) \
-            + self.L1_lambda * abs_criterion(self.real_A, self.fake_A_) \
-            + self.L1_lambda * abs_criterion(self.real_B, self.fake_B_)
 
         self.fake_A_sample = tf.placeholder(tf.float32,
                                             [None, self.image_width, self.image_height,
