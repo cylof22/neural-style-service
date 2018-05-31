@@ -5,9 +5,6 @@ import urllib
 from collections import namedtuple
 from PIL import Image
 
-import tensorflow as tf
-tf.set_random_seed(19)
-
 from neural_style import neuralstyle
 from model import cyclegan
 from argparse import ArgumentParser
