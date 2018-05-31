@@ -90,8 +90,9 @@ def art_style():
     args = OPTIONS._make((fine_width, fine_height, 3, 3, 10.0, 0.0002, True, True, '', content_file, model_dir, './data/outputs/',64, 64, 50, 'test', 'BtoA',
                          0.5, 200, 100, 1, 1e8, output_file))
 
-    tfconfig = tf.ConfigProto(allow_soft_placement=True)
-    tfconfig.gpu_options.allow_growth = True
+    gpuOptions = tf.GPUOptions(allow_growth=True)
+    tfconfig = tf.ConfigProto(gpu_options=gpuOptions)
+    tfconfig.allow_soft_placement = True
 
     outputPath = None
     tf.reset_default_graph()
