@@ -16,37 +16,32 @@ app = Flask(__name__)
 MODEL_DIR = ''
 CHECKPOINT_DIR = './checkpoint/'
 
-
-@app.route('/styleTransfer') 
+@app.route('/styleTransfer', methods=['POST']) 
 def style_transfer(): 
-    contentArg = request.args.get('content')
     styleArg = request.args.get('style')
-
-    iterations = request.args.get('iterations', type=int)
-
-    contentPath = b64decode(contentArg)
     stylePath = b64decode(styleArg)
-
-    contentPath = contentPath.decode('utf-8')
     stylePath = stylePath.decode('utf-8')
-
-    # Download the style to local machine
     styleFileName = urllib.request.urlretrieve(stylePath)[0]
 
+    iterations = request.args.get('iterations', type=int)    
+
     # Download the content file to local machine
-    contentFileName = urllib.request.urlretrieve(contentPath)[0]
+    contentFile = request.files['content']
+    contentPath = './data/contents/' + contentFile.filename
+    contentFile.save(contentPath)
 
     # Construct the output file name
-    outputname = basename(contentPath) + '_' + basename(stylePath) + '.png'
+    outputname = basename(stylePath) + '_' + contentFile.filename
     outputPath = 'data/outputs/' + outputname
 
-    args = {"content": contentFileName, "styles": {styleFileName}, "output": outputPath, "iterations": iterations,
+    args = {"content": contentPath, "styles": {styleFileName}, "output": outputPath, "iterations": iterations,
         'network': MODEL_DIR}
     
     styleOp = neuralstyle(args)
     _, error = styleOp.train()
 
     # Todo: How to add the custom error information to the response
+    # Do: the remove file asynchronously
     if error is not None:
         urllib.request.urlcleanup()
         return error
@@ -54,21 +49,21 @@ def style_transfer():
     # Todo: Clear the temporary style and content files
     urllib.request.urlcleanup()
 
-    return send_file(outputPath, mimetype='image/png')
+    return send_file(outputPath, mimetype=contentFile.mimetype)
 
-@app.route('/artistStyle')
-def art_style():
+@app.route('/artistStyle/<string:style>', methods=['POST'])
+def art_style(style):
     # Get the artist name
     model_dir = None
-    style = request.args.get('artist')
 
     model_dir = CHECKPOINT_DIR + style
     
-    contentArg = request.args.get('content')
-    contentPath = b64decode(contentArg)
-    contentPath = contentPath.decode('utf-8')
-    content_file = urllib.request.urlretrieve(contentPath)[0]
+    print(request.files)
+    contentFile = request.files['content']
+    content_file = './data/content/' + contentFile.filename
+    contentFile.save(content_file)
 
+    print(content_file)
     im = Image.open(content_file)
     width, height = im.size
 
@@ -80,7 +75,7 @@ def art_style():
     if (height % 4) != 0:
         fine_height = height - height % 4
 
-    output_file = style + basename(contentPath)
+    output_file = style + '_' + contentFile.filename
     OPTIONS = namedtuple('OPTIONS', 'fine_width fine_height input_nc output_nc\
                               use_resnet use_lsgan sample_file checkpoint_dir output_dir \
                               ngf ndf phase direction \
@@ -104,27 +99,22 @@ def art_style():
     rsImg = img.resize((width,height), Image.ANTIALIAS)
     rsImg.save(outputPath)
 
-     # Clear the temporary content file
-    urllib.request.urlcleanup()
-
-    imgMIME = 'image/' + '-'.join(basename(outputPath).split('.')[1:])
-
-    print(imgMIME)
-
-    return send_file(outputPath,  mimetype=imgMIME)
+    return send_file(outputPath,  mimetype=contentFile.mimetype)
 
 @app.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,OPTIONS')
+    # Todo: How to set the control allow origin
+    response.headers.add("Access-Control-Allow-Origin", "http://localhost:8000, www.elforce.net")
+    response.headers.add("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT")
+    response.headers.add("Access-Control-Allow-Headers", "Authorization, enctype")
+
     return response
 
 def build_parser():
     parser = ArgumentParser()
     parser.add_argument('--host',
             dest='host', help='style server host',
-            metavar='HOST', default='localhost', required=False)
+            metavar='HOST', default='127.0.0.1', required=False)
     parser.add_argument('--port',
             dest='port', help='style server port',
             metavar='PORT', default='9090', required=False)
@@ -134,6 +124,7 @@ def build_parser():
     parser.add_argument('--checkpointdir',
             dest='checkpointdir', help='artist transfer checkpoint director', 
             metavar='CHECKPOINTDIR', default='./checkpoint/',required=False)
+
     return parser
     
 if __name__ == '__main__':
