@@ -108,7 +108,7 @@ def after_request(response):
     # Todo: How to set the control allow origin
     response.headers.add("Access-Control-Allow-Origin", "*")
     response.headers.add("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT")
-    response.headers.add("Access-Control-Allow-Headers", "Authorization, enctype")
+    response.headers.add("Access-Control-Allow-Headers", "Authorization, enctype, timeout")
 
     return response
 
