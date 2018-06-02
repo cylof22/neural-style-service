@@ -3,8 +3,10 @@ from base64 import b64decode
 from os.path import basename
 import urllib
 from collections import namedtuple
-from PIL import Image
 
+from imageio import imread, imwrite
+
+from skimage.transform import resize
 import tensorflow as tf
 
 from neural_style import neuralstyle
@@ -60,12 +62,12 @@ def art_style(style):
     
     print(request.files)
     contentFile = request.files['content']
-    content_file = './data/content/' + contentFile.filename
+    content_file = './data/contents/' + contentFile.filename
     contentFile.save(content_file)
 
     print(content_file)
-    im = Image.open(content_file)
-    width, height = im.size
+    im = imread(content_file)
+    width, height, _  = im.shape
 
     fine_width = width
     if (width % 4) != 0:
@@ -95,9 +97,9 @@ def art_style(style):
         outputPath = model.test(args)
     
     # resize the file to the original image size
-    img = Image.open(outputPath)
-    rsImg = img.resize((width,height), Image.ANTIALIAS)
-    rsImg.save(outputPath)
+    img = imread(outputPath)
+    img = resize(img, [width, height])
+    imwrite(outputPath, img)
 
     return send_file(outputPath,  mimetype=contentFile.mimetype)
 
