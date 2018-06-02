@@ -32,7 +32,7 @@ def style_transfer():
 
     # Construct the output file name
     outputname = basename(stylePath) + '_' + contentFile.filename
-    outputPath = 'data/outputs/' + outputname
+    outputPath = './data/outputs/' + outputname
 
     args = {"content": contentPath, "styles": {styleFileName}, "output": outputPath, "iterations": iterations,
         'network': MODEL_DIR}
@@ -104,7 +104,7 @@ def art_style(style):
 @app.after_request
 def after_request(response):
     # Todo: How to set the control allow origin
-    response.headers.add("Access-Control-Allow-Origin", "http://localhost:8000, www.elforce.net")
+    response.headers.add("Access-Control-Allow-Origin", "https://www.elforce.net")
     response.headers.add("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT")
     response.headers.add("Access-Control-Allow-Headers", "Authorization, enctype")
 
