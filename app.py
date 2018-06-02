@@ -116,7 +116,7 @@ def build_parser():
     parser = ArgumentParser()
     parser.add_argument('--host',
             dest='host', help='style server host',
-            metavar='HOST', default='127.0.0.1', required=False)
+            metavar='HOST', default='0.0.0.0', required=False)
     parser.add_argument('--port',
             dest='port', help='style server port',
             metavar='PORT', default='9090', required=False)
